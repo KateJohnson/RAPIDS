@@ -1,5 +1,7 @@
 # RAPIDS
-Type 2 Diabetes Microsimulation Model
+
+### Type 2 Diabetes Microsimulation Model
+
 
 The original publication can be found [here](https://journals.sagepub.com/doi/abs/10.1177/0272989X18817521)
 
