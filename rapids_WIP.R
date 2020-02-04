@@ -18,8 +18,8 @@ rapids<-function(base_biom, base_outcomes, base_x, treatment, betam, horizon) {
     stop("baseline biomarker levels or outcomes not specified over last two periods")
   }
   
-  m<-1000                        ## no. of monte carlo iterations
-  n_biom<-9                   ## no. of biomarkers
+  m <-1000                        ## no. of monte carlo iterations
+  n_biom <-9                   ## no. of biomarkers
   n_outcomes <- 13            ## no. of outcomes
   n_x <- 10                   ## No. of demographic factors
   r <- abs(nrow(base_biom)/n_biom)  ## no. of individuals
@@ -57,27 +57,26 @@ rapids<-function(base_biom, base_outcomes, base_x, treatment, betam, horizon) {
       
       ## Death UPDATE
       bc <-10
+      # PSA, s=1
       pr <-  betam[149, bc][rep(1,each=2)] +
                             t(t(betam[1:10, bc])[rep(1:nrow(t(betam[1:10, bc])),each=2),] %*% fi_x[t+1,  , i, ]) +
-                            t(t(betam[11:23, bc])[rep(1:nrow(t(betam[11:23, bc])),each=2),] %*% fi_outcomes[t+1,  , i, ]) +
+                            t(t(betam[11:23, bc])[rep(1:nrow(t(betam[11:23, bc])),each=2),] %*% fi_outcomes[t+1,  , i, , 1]) +
                             t(t(betam[24:32, bc])[rep(1:nrow(t(betam[24:32, bc])),each=2),] %*% fi_biom[t+1,  , i, ]) +
                             t(t(betam[33:45, bc])[rep(1:nrow(t(betam[33:45, bc])),each=2),] %*% treat[ ,t+1, i]) +
-                            t(t(betam[46:58, bc])[rep(1:nrow(t(betam[46:58, bc])),each=2),] %*% fi_outcomes[t+1,  , i, ]) %*% t(matrix(fi_x[t+1,  1, i, ],ncol=2,nrow=length(fi_x[t+1,  1, i, ]))) +
+                            t(t(betam[46:58, bc])[rep(1:nrow(t(betam[46:58, bc])),each=2),] %*% fi_outcomes[t+1,  , i, , 1]) %*% t(matrix(fi_x[t+1,  1, i, ],ncol=2,nrow=length(fi_x[t+1,  1, i, ]))) +
                             t(t(betam[59:67, bc])[rep(1:nrow(t(betam[59:67, bc])),each=2),] %*% fi_biom[t+1,  , i, ]) %*% t(matrix(fi_x[t+1,  1, i, ],ncol=2,nrow=length(fi_x[t+1,  1, i, ]))) +
                             t(t(betam[68:80, bc])[rep(1:nrow(t(betam[68:80, bc])),each=2),] %*% treat[ ,t+1, i]) %*% t(matrix(fi_x[t+1,  1, i, ],ncol=2,nrow=length(fi_x[t+1,  1, i, ]))) +
-                            t(t(betam[81:92, bc])[rep(1:nrow(t(betam[81:92, bc])),each=2),] %*% fi_outcomes[t+1, 2:n_outcomes , i, ]) +
+                            t(t(betam[81:92, bc])[rep(1:nrow(t(betam[81:92, bc])),each=2),] %*% fi_outcomes[t+1, 2:n_outcomes, i, , 1]) +
                             t(t(betam[93:101, bc])[rep(1:nrow(t(betam[93:101, bc])),each=2),] %*% fi_biom[t,  , i, ]) +
                             t(t(betam[102:114, bc])[rep(1:nrow(t(betam[102:114, bc])),each=2),] %*% treat[ ,t+1, i]) +
-                            t(t(betam[115:126, bc])[rep(1:nrow(t(betam[115:126, bc])),each=2),] %*% fi_outcomes[t,2:n_outcomes  , i, ]) %*% t(matrix(fi_x[t+1,  1, i, ],ncol=2,nrow=length(fi_x[t+1,  1, i, ]))) +
+                            t(t(betam[115:126, bc])[rep(1:nrow(t(betam[115:126, bc])),each=2),] %*% fi_outcomes[t,2:n_outcomes  , i, , 1]) %*% t(matrix(fi_x[t+1,  1, i, ],ncol=2,nrow=length(fi_x[t+1,  1, i, ]))) +
                             t(t(betam[127:135, bc])[rep(1:nrow(t(betam[127:135, bc])),each=2),] %*% fi_biom[t,  , i, ]) %*% t(matrix(fi_x[t+1,  1, i, ],ncol=2,nrow=length(fi_x[t+1,  1, i, ]))) +
                             t(t(betam[136:148, bc])[rep(1:nrow(t(betam[136:148, bc])),each=2),] %*% treat[ ,t+1, i]) %*% t(matrix(fi_x[t+1,  1, i, ],ncol=2,nrow=length(fi_x[t+1,  1, i, ])))
       
-      # s=1
       pr = ifelse(pr<0, 0, ifelse(pr>1, 1, pr)) 
-      pri = matrix(rbern(rep(1,m), pr[[1]]), rbern(rep(1,m), pr[[2]]), nrow=m, ncol=2)
+      pri = matrix(c(rbern(m, pr[[1]]), rbern(m, pr[[2]])), nrow=m, ncol=2)
       fi_outcomes[t+2, 1, i, ,1] = ifelse(fi_outcomes[t+1, 1, i, ,1]==0 , pri[,1] ,fi_outcomes[t+1, 1, i, ,1] ) 
 
-      # s=2
       
       ## BIOMARKER UPDATES
       
@@ -185,11 +184,10 @@ rapids<-function(base_biom, base_outcomes, base_x, treatment, betam, horizon) {
 }
 
 
-
+##### Run the model #######
 
 betam <- read_dta("Data/finalbetamatrix.dta")
 simuldataforR <- read_dta("Data/siumldataforR.dta")
-
 
 base_x = rbind(simuldataforR[1, 4], c(NA), simuldataforR[2:9, 4] )
 base_x = t(base_x)
@@ -199,6 +197,8 @@ horizon = 10
 
 treatment = simuldataforR[32:44, 3:4]
 treatment = cbind(treatment, matrix( rep(t((treatment[,2])), horizon), nrow(treatment), horizon))
-rapids(base_biom, base_outcomes, base_x, treatment, betam, horizon)
+
+# model run
+rapids(base_biom, base_outcomes, base_x, treatment, betam, horizon) 
   
   
