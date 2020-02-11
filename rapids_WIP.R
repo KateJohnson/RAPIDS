@@ -7,6 +7,8 @@ library(htmltools)
 library(Rlab)
 library(haven)
 library(here)
+library(plyr)
+library(purrr)
 
 
 rapids<-function(base_biom, base_outcomes, base_x, treatment, betam, horizon) {
@@ -34,11 +36,11 @@ rapids<-function(base_biom, base_outcomes, base_x, treatment, betam, horizon) {
   fi_biom[1:2, 1:n_biom, 1:r, ] = t(base_biom)
 
   
-  fi_outcomes = matrix(, 1, r*n_outcomes*(horizon+2)*m*s) #added s dimension
+  fi_outcomes = matrix(, 1, r*n_outcomes*(horizon+2)*m*s) # added s dimension
   dim(fi_outcomes)=c((horizon+2),n_outcomes,  r, m, s)
   fi_outcomes[1:2, 1:n_outcomes,1:r,  ,] = t(base_outcomes)
   
-  fi_x = matrix(, 1, r*n_x*(horizon+1)*m)
+  fi_x = matrix(, 1, r*n_x*(horizon+1)*m) 
   dim(fi_x)=c((horizon+1), n_x,r, m)
   fi_x[1, 1:n_x, 1:r,  ] = base_x
   
@@ -57,26 +59,32 @@ rapids<-function(base_biom, base_outcomes, base_x, treatment, betam, horizon) {
       
       ## Death UPDATE
       bc <-10
-      # PSA, s=1
       pr <-  betam[149, bc][rep(1,each=2)] +
-                            t(t(betam[1:10, bc])[rep(1:nrow(t(betam[1:10, bc])),each=2),] %*% fi_x[t+1,  , i, ]) +
-                            t(t(betam[11:23, bc])[rep(1:nrow(t(betam[11:23, bc])),each=2),] %*% fi_outcomes[t+1,  , i, , 1]) +
-                            t(t(betam[24:32, bc])[rep(1:nrow(t(betam[24:32, bc])),each=2),] %*% fi_biom[t+1,  , i, ]) +
-                            t(t(betam[33:45, bc])[rep(1:nrow(t(betam[33:45, bc])),each=2),] %*% treat[ ,t+1, i]) +
-                            t(t(betam[46:58, bc])[rep(1:nrow(t(betam[46:58, bc])),each=2),] %*% fi_outcomes[t+1,  , i, , 1]) %*% t(matrix(fi_x[t+1,  1, i, ],ncol=2,nrow=length(fi_x[t+1,  1, i, ]))) +
-                            t(t(betam[59:67, bc])[rep(1:nrow(t(betam[59:67, bc])),each=2),] %*% fi_biom[t+1,  , i, ]) %*% t(matrix(fi_x[t+1,  1, i, ],ncol=2,nrow=length(fi_x[t+1,  1, i, ]))) +
-                            t(t(betam[68:80, bc])[rep(1:nrow(t(betam[68:80, bc])),each=2),] %*% treat[ ,t+1, i]) %*% t(matrix(fi_x[t+1,  1, i, ],ncol=2,nrow=length(fi_x[t+1,  1, i, ]))) +
-                            t(t(betam[81:92, bc])[rep(1:nrow(t(betam[81:92, bc])),each=2),] %*% fi_outcomes[t+1, 2:n_outcomes, i, , 1]) +
-                            t(t(betam[93:101, bc])[rep(1:nrow(t(betam[93:101, bc])),each=2),] %*% fi_biom[t,  , i, ]) +
-                            t(t(betam[102:114, bc])[rep(1:nrow(t(betam[102:114, bc])),each=2),] %*% treat[ ,t+1, i]) +
-                            t(t(betam[115:126, bc])[rep(1:nrow(t(betam[115:126, bc])),each=2),] %*% fi_outcomes[t,2:n_outcomes  , i, , 1]) %*% t(matrix(fi_x[t+1,  1, i, ],ncol=2,nrow=length(fi_x[t+1,  1, i, ]))) +
-                            t(t(betam[127:135, bc])[rep(1:nrow(t(betam[127:135, bc])),each=2),] %*% fi_biom[t,  , i, ]) %*% t(matrix(fi_x[t+1,  1, i, ],ncol=2,nrow=length(fi_x[t+1,  1, i, ]))) +
-                            t(t(betam[136:148, bc])[rep(1:nrow(t(betam[136:148, bc])),each=2),] %*% treat[ ,t+1, i]) %*% t(matrix(fi_x[t+1,  1, i, ],ncol=2,nrow=length(fi_x[t+1,  1, i, ])))
+                            mapply("%*%", replicate(s,t(betam[1:10, bc]),simplify=FALSE), replicate(s,fi_x[t+1,  , i, ],simplify=FALSE)) +
+                            mapply("%*%", replicate(s,t(betam[11:23, bc]),simplify=FALSE), alply(fi_outcomes[t+1, , i, , ], c(NULL,NULL,3))) +
+                            mapply("%*%", replicate(s,t(betam[24:32, bc]),simplify=FALSE), replicate(s,fi_biom[t+1,  , i, ],simplify=FALSE)) +
+                            mapply("%*%", replicate(s,t(betam[33:45, bc]),simplify=FALSE), replicate(s,treat[ ,t+1, i],simplify=FALSE)) +
+                            mapply("%*%", replicate(s,t(betam[46:58, bc]),simplify=FALSE), alply(fi_outcomes[t+1, , i, , ], c(NULL,NULL,3))) %*% 
+                                    t(matrix(fi_x[t+1, 1, i, ], ncol=s, nrow=length(fi_x[t+1,  1, i, ])))  +
+                            mapply("%*%", replicate(s,t(betam[59:67, bc]),simplify=FALSE), replicate(s,fi_biom[t+1,  , i, ],simplify=FALSE))   %*% 
+                                    t(matrix(fi_x[t+1, 1, i, ], ncol=s, nrow=length(fi_x[t+1,  1, i, ])))  +
+                            mapply("%*%", replicate(s,t(betam[68:80, bc]),simplify=FALSE), replicate(s,treat[ ,t+1, i],simplify=FALSE))   %*% 
+                                    t(matrix(fi_x[t+1,  1, i, ],ncol=2,nrow=length(fi_x[t+1,  1, i, ]))) +
+                            mapply("%*%", replicate(s,t(betam[81:92, bc]),simplify=FALSE), alply(fi_outcomes[t+1, 2:n_outcomes, i, , ], c(NULL,NULL,3))) +
+                            mapply("%*%", replicate(s,t(betam[93:101, bc]),simplify=FALSE), replicate(s,fi_biom[t,  , i, ],simplify=FALSE)) +
+                            mapply("%*%", replicate(s,t(betam[102:114, bc]),simplify=FALSE), replicate(s,treat[ ,t+1, i],simplify=FALSE)) +
+                            mapply("%*%", replicate(s,t(betam[115:126, bc]),simplify=FALSE), alply(fi_outcomes[t,2:n_outcomes  , i, , ], c(NULL,NULL,3))) %*% 
+                                    t(matrix(fi_x[t+1,  1, i, ],ncol=2,nrow=length(fi_x[t+1,  1, i, ]))) +
+                            mapply("%*%", replicate(s,t(betam[127:135, bc]),simplify=FALSE), replicate(s,fi_biom[t,  , i, ],simplify=FALSE)) %*% 
+                                    t(matrix(fi_x[t+1,  1, i, ],ncol=2,nrow=length(fi_x[t+1,  1, i, ]))) +
+                            mapply("%*%", replicate(s,t(betam[136:148, bc]),simplify=FALSE), replicate(s,treat[ ,t+1, i],simplify=FALSE)) %*%
+                                    t(matrix(fi_x[t+1,  1, i, ],ncol=2,nrow=length(fi_x[t+1,  1, i, ])))
       
       pr = ifelse(pr<0, 0, ifelse(pr>1, 1, pr)) 
-      pri = matrix(c(rbern(m, pr[[1]]), rbern(m, pr[[2]])), nrow=m, ncol=2)
-      fi_outcomes[t+2, 1, i, ,1] = ifelse(fi_outcomes[t+1, 1, i, ,1]==0 , pri[,1] ,fi_outcomes[t+1, 1, i, ,1] ) 
-
+      pri = lapply(pr, function(i) { rbern(m, pr[[i]]) } )
+      outcome.t2 <- pmap(list(alply(fi_outcomes[t+1, 1, i, , ], 2), pri), function(x,y) { ifelse(x==0, y, x) })
+      fi_outcomes[t+2, 1, i, , ] <- matrix(unlist(outcome.t2), ncol=length(outcome.t2))
+      
       
       ## BIOMARKER UPDATES
       
