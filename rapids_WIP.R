@@ -35,14 +35,13 @@ rapids<-function(base_biom, base_outcomes, base_x, treatment, betam, horizon) {
   dim(fi_biom)=c((horizon+2),n_biom,  r, m)
   fi_biom[1:2, 1:n_biom, 1:r, ] = t(base_biom)
 
-  
   fi_outcomes = matrix(, 1, r*n_outcomes*(horizon+2)*m*s) # added s dimension
   dim(fi_outcomes)=c((horizon+2),n_outcomes,  r, m, s)
-  fi_outcomes[1:2, 1:n_outcomes,1:r,  ,] = t(base_outcomes)
+  fi_outcomes[1:2, 1:n_outcomes,1:r,  , ] = t(base_outcomes)
   
-  fi_x = matrix(, 1, r*n_x*(horizon+1)*m) 
-  dim(fi_x)=c((horizon+1), n_x,r, m)
-  fi_x[1, 1:n_x, 1:r,  ] = base_x
+  fi_x = matrix(, 1, r*n_x*(horizon+1)*m*s)  # added s dimension
+  dim(fi_x)=c((horizon+1), n_x,r, m, s)
+  fi_x[1, 1:n_x, 1:r, , ] = base_x
   
   treat = as.vector(unlist(treatment))
   dim(treat) = c(13, horizon+2, r)
@@ -52,34 +51,34 @@ rapids<-function(base_biom, base_outcomes, base_x, treatment, betam, horizon) {
     for(t in 1:horizon) {
       
       ## Update demographics
-      fi_x[t+1, 1:n_x , i, ] =  fi_x[t, 1:n_x , i,  ]     ## Copy demog vector to next time period
-      fi_x[t+1, 1 , i, ] = fi_x[t+1, 1 , i,  ] + 0.25     ## Increase age by .25 years
-      fi_x[t+1, 2 , i, ] = fi_x[t+1, 1 , i, ]^2           ## Canculate Age ^2
-      fi_x[t+1, 10 , i, ] = fi_x[t+1, 10 , i,  ] + 0.25   ## Increase duration of diabetes by .25 years
+      fi_x[t+1, 1:n_x , i, , ] =  fi_x[t, 1:n_x, i, , ]     ## Copy demog vector to next time period
+      fi_x[t+1, 1, i, , ] = fi_x[t+1, 1, i, , ] + 0.25     ## Increase age by .25 years
+      fi_x[t+1, 2, i, , ] = fi_x[t+1, 1, i, , ]^2           ## Canculate Age ^2
+      fi_x[t+1, 10, i, , ] = fi_x[t+1, 10, i, , ] + 0.25   ## Increase duration of diabetes by .25 years
       
       ## Death UPDATE
       bc <-10
       pr <-  betam[149, bc][rep(1,each=2)] +
-                            mapply("%*%", replicate(s,t(betam[1:10, bc]),simplify=FALSE), replicate(s,fi_x[t+1,  , i, ],simplify=FALSE)) +
+                            mapply("%*%", replicate(s,t(betam[1:10, bc]),simplify=FALSE), alply(fi_x[t+1,  , i, , ], c(NULL,NULL,3))) +
                             mapply("%*%", replicate(s,t(betam[11:23, bc]),simplify=FALSE), alply(fi_outcomes[t+1, , i, , ], c(NULL,NULL,3))) +
                             mapply("%*%", replicate(s,t(betam[24:32, bc]),simplify=FALSE), replicate(s,fi_biom[t+1,  , i, ],simplify=FALSE)) +
                             mapply("%*%", replicate(s,t(betam[33:45, bc]),simplify=FALSE), replicate(s,treat[ ,t+1, i],simplify=FALSE)) +
                             mapply("%*%", replicate(s,t(betam[46:58, bc]),simplify=FALSE), alply(fi_outcomes[t+1, , i, , ], c(NULL,NULL,3))) %*% 
-                                    t(matrix(fi_x[t+1, 1, i, ], ncol=s, nrow=length(fi_x[t+1,  1, i, ])))  +
-                            mapply("%*%", replicate(s,t(betam[59:67, bc]),simplify=FALSE), replicate(s,fi_biom[t+1,  , i, ],simplify=FALSE))   %*% 
-                                    t(matrix(fi_x[t+1, 1, i, ], ncol=s, nrow=length(fi_x[t+1,  1, i, ])))  +
+                                    t(fi_x[t+1, 1, i, , ]) +
+                            mapply("%*%", replicate(s,t(betam[59:67, bc]),simplify=FALSE), replicate(s,fi_biom[t+1,  , i, ],simplify=FALSE))   %*%
+                                    t(fi_x[t+1, 1, i, , ]) +
                             mapply("%*%", replicate(s,t(betam[68:80, bc]),simplify=FALSE), replicate(s,treat[ ,t+1, i],simplify=FALSE))   %*% 
-                                    t(matrix(fi_x[t+1,  1, i, ],ncol=2,nrow=length(fi_x[t+1,  1, i, ]))) +
+                                    t(fi_x[t+1, 1, i, , ]) +
                             mapply("%*%", replicate(s,t(betam[81:92, bc]),simplify=FALSE), alply(fi_outcomes[t+1, 2:n_outcomes, i, , ], c(NULL,NULL,3))) +
                             mapply("%*%", replicate(s,t(betam[93:101, bc]),simplify=FALSE), replicate(s,fi_biom[t,  , i, ],simplify=FALSE)) +
                             mapply("%*%", replicate(s,t(betam[102:114, bc]),simplify=FALSE), replicate(s,treat[ ,t+1, i],simplify=FALSE)) +
-                            mapply("%*%", replicate(s,t(betam[115:126, bc]),simplify=FALSE), alply(fi_outcomes[t,2:n_outcomes  , i, , ], c(NULL,NULL,3))) %*% 
-                                    t(matrix(fi_x[t+1,  1, i, ],ncol=2,nrow=length(fi_x[t+1,  1, i, ]))) +
-                            mapply("%*%", replicate(s,t(betam[127:135, bc]),simplify=FALSE), replicate(s,fi_biom[t,  , i, ],simplify=FALSE)) %*% 
-                                    t(matrix(fi_x[t+1,  1, i, ],ncol=2,nrow=length(fi_x[t+1,  1, i, ]))) +
+                            mapply("%*%", replicate(s,t(betam[115:126, bc]),simplify=FALSE), alply(fi_outcomes[t,2:n_outcomes  , i, , ], c(NULL,NULL,3))) %*%
+                                    t(fi_x[t+1, 1, i, , ]) +
+                            mapply("%*%", replicate(s,t(betam[127:135, bc]),simplify=FALSE), replicate(s,fi_biom[t,  , i, ],simplify=FALSE)) %*%
+                                    t(fi_x[t+1, 1, i, , ]) +
                             mapply("%*%", replicate(s,t(betam[136:148, bc]),simplify=FALSE), replicate(s,treat[ ,t+1, i],simplify=FALSE)) %*%
-                                    t(matrix(fi_x[t+1,  1, i, ],ncol=2,nrow=length(fi_x[t+1,  1, i, ])))
-      
+                                    t(fi_x[t+1, 1, i, , ])
+
       pr = ifelse(pr<0, 0, ifelse(pr>1, 1, pr)) 
       pri = lapply(pr, function(i) { rbern(m, pr[[i]]) } )
       outcome.t2 <- pmap(list(alply(fi_outcomes[t+1, 1, i, , ], 2), pri), function(x,y) { ifelse(x==0, y, x) })
