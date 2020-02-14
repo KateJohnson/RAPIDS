@@ -182,8 +182,8 @@ rapids<-function(base_biom, base_outcomes, base_x, treatment, betam, horizon) {
 
 
 
-betam <- read_dta("finalbetamatrix.dta")
-simuldataforR <- read_dta("siumldataforR.dta")
+betam <- read_dta("data/finalbetamatrix.dta")
+simuldataforR <- read_dta("data/siumldataforR.dta")
 
 
 base_x = rbind(simuldataforR[1, 4], c(NA), simuldataforR[2:9, 4] )
