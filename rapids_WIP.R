@@ -31,15 +31,15 @@ rapids <- function(base_biom, base_outcomes, base_x, treatment, betam, horizon) 
   varcoeff = matrix(c(1.619101, -5.776551, 1.714504, -3.596814, .4956913, 1.600088, 3.749151, -8.312432, 1.181856,-1.514088,1.106989,.511323, 2.294562, -5.855728, 1.407148, .4426071, .2707567, 2.84833 ), 2, 9 )
   
   
-  fi_biom = matrix(, 1, r*n_biom*(horizon+2)*m*s) # added s dimension
+  fi_biom = matrix(data=NA, 1, r*n_biom*(horizon+2)*m*s)
   dim(fi_biom)=c((horizon+2),n_biom,  r, m, s)
   fi_biom[1:2, 1:n_biom, 1:r, , ] = t(base_biom)
 
-  fi_outcomes = matrix(, 1, r*n_outcomes*(horizon+2)*m*s) # added s dimension
+  fi_outcomes = matrix(data=NA, 1, r*n_outcomes*(horizon+2)*m*s)
   dim(fi_outcomes)=c((horizon+2),n_outcomes,  r, m, s)
   fi_outcomes[1:2, 1:n_outcomes,1:r,  , ] = t(base_outcomes)
   
-  fi_x = matrix(, 1, r*n_x*(horizon+1)*m*s)  # added s dimension
+  fi_x = matrix(data=NA, 1, r*n_x*(horizon+1)*m*s)
   dim(fi_x)=c((horizon+1), n_x,r, m, s)
   fi_x[1, 1:n_x, 1:r, , ] = base_x
   
@@ -119,7 +119,7 @@ rapids <- function(base_biom, base_outcomes, base_x, treatment, betam, horizon) 
         mu <- as.list(mu)
         var <- lapply(mu, function(j) {exp(varcoeff[1,b]*log(j) + varcoeff[2,b]) })
         mu.var <- mapply(c, mu, var, SIMPLIFY=FALSE)
-        biom.t2 <- lapply(mu.var, function(k) {rnorm(rep(1, m), k[1], sqrt(k[2])) }) # this is generating warnings
+        biom.t2 <- lapply(mu.var, function(k) {rnorm(rep(1, m), k[1], sqrt(k[2])) })
         fi_biom[t+2,  b, i, , ] <- matrix(unlist(biom.t2), ncol=length(biom.t2))
         
         }
