@@ -79,10 +79,10 @@ rapids <- function(base_biom, base_outcomes, base_x, treatment, betam, horizon) 
                              mapply("%*%", replicate(s,t(betam[136:148, bc]),simplify=FALSE), replicate(s,treat[ ,t+1, i],simplify=FALSE)) *
                                     fi_x[t+1, 1, i, , ]
       
-      pr <- pr[1,]
-      print(pr)
-      pr = ifelse(pr<0, 0, ifelse(pr>1, 1, pr)) 
-      pri = lapply(pr, function(j) { rbern(m, j) } )
+      print(head(pr))
+      pr <- ifelse(pr<0, 0, ifelse(pr>1, 1, pr))
+      prl <- split(pr, seq(ncol(pr)))
+      pri <- lapply(prl, function(j) { rbern(m, j) } )
       outcome.t2 <- pmap(list(alply(fi_outcomes[t+1, 1, i, , ], 2), pri), function(x,y) { ifelse(x==0, y, x) })
       fi_outcomes[t+2, 1, i, , ] <- matrix(unlist(outcome.t2), ncol=length(outcome.t2))
       
@@ -116,16 +116,14 @@ rapids <- function(base_biom, base_outcomes, base_x, treatment, betam, horizon) 
                             mapply("%*%", replicate(s,t(betam[136:148, bc]),simplify=FALSE), replicate(s,treat[ ,t+1, i],simplify=FALSE)) * 
                                   fi_x[t+1, 1, i, , ]
         
-        mu <- mu[1,]
-        print(mu)
-        mu <- as.list(mu)
-        var <- lapply(mu, function(j) {exp(varcoeff[1,b]*log(j) + varcoeff[2,b]) })
-        mu.var <- mapply(c, mu, var, SIMPLIFY=FALSE)
-        biom.t2 <- lapply(mu.var, function(k) {rnorm(rep(1, m), k[1], sqrt(k[2])) })
+        print(head(mu))
+        mul <- split(mu, seq(ncol(mu)))
+        var <- lapply(mul, function(j) {exp(varcoeff[1,b]*log(j) + varcoeff[2,b]) })
+        biom.t2 <- pmap(list(mul,var), function(j,k) { rnorm(m, j, sqrt(k)) })
         fi_biom[t+2,  b, i, , ] <- matrix(unlist(biom.t2), ncol=length(biom.t2))
-        
+       
         }
-        ## Respeing range of values for biomarkers
+        ## Reseting range of values for biomarkers
         fi_biom[t+2, 1, i, , ] =ifelse(fi_biom[t+2,  1, i, , ]<0 , 0 , ifelse(fi_biom[t+2,  1, i, , ]>60 , 60 , fi_biom[t+2,  1, i, , ] ) )      ## BMI
         fi_biom[t+2, 2, i, , ] =ifelse(fi_biom[t+2,  2, i, , ]<0 , 0 , ifelse(fi_biom[t+2,  2, i, , ]>20 , 20 , fi_biom[t+2,  2, i, , ] ) )      ## A1C
         fi_biom[t+2, 3, i, , ] =ifelse(fi_biom[t+2,  3, i, , ]<0 , 0 , ifelse(fi_biom[t+2,  3, i, , ]>100 , 100 , fi_biom[t+2,  3, i, , ] ) )    ## HDL
@@ -165,11 +163,11 @@ rapids <- function(base_biom, base_outcomes, base_x, treatment, betam, horizon) 
                             mapply("%*%", replicate(s,t(betam[136:148, bc]),simplify=FALSE), replicate(s,treat[ ,t+1, i],simplify=FALSE)) * 
                                   fi_x[t+1, 1, i, , ]
           
-          pr <- pr[1,]
-          print(pr)
-          pr = ifelse(pr<0, 0, ifelse(pr>1, 1, pr))
-          fi_outcomes_b9 <- lapply(pr, function(j) { rbern(rep(1, m), j) } )
-          fi_outcomes[t+2,  b-9, i, , ] <- matrix(unlist(fi_outcomes_b9), ncol=length(fi_outcomes_b9))
+          print(head(pr))
+          pr <- ifelse(pr<0, 0, ifelse(pr>1, 1, pr))
+          prl <- split(pr, seq(ncol(pr)))
+          outcomes <- lapply(prl, function(j) { rbern(m, j) } )
+          fi_outcomes[t+2,  b-9, i, , ] <- matrix(unlist(outcomes), ncol=length(outcomes))
           fi_outcomes[t+2,  b-5, i, , ] <- ifelse(fi_outcomes[t+1, b-5, i, , ]==0, fi_outcomes[t+2,  b-9, i, , ], fi_outcomes[t+1, b-5, i, , ])  ## history
           
         }
@@ -202,14 +200,13 @@ rapids <- function(base_biom, base_outcomes, base_x, treatment, betam, horizon) 
                          mapply("%*%", replicate(s,t(betam[136:148, bc]),simplify=FALSE), replicate(s,treat[ ,t+1, i],simplify=FALSE)) * 
                                 fi_x[t+1, 1, i, , ]
           
-          pr <- pr[1,]
-          print(pr)
+          print(head(pr))
           pr = ifelse(pr<0, 0, ifelse(pr>1, 1, pr))
-          pri = lapply(pr, function(j) { rbern(rep(1, m), j) } )
-          outcome.t2b <- pmap(list(alply(fi_outcomes[t+1, b-5, i, , ], 2), pri), function(x,y) { ifelse(x==0, y, x) })
-          fi_outcomes[t+2,  b-5, i, , ] <- matrix(unlist(outcome.t2b), ncol=length(outcome.t2b))
-          
-        
+          prl <- split(pr, seq(ncol(pr)))
+          pri <- lapply(prl, function(j) { rbern(m, j) } )
+          outcomes2 <- pmap(list(alply(fi_outcomes[t+1, b-5, i, , ], 2), pri), function(x,y) { ifelse(x==0, y, x) })
+          fi_outcomes[t+2,  b-5, i, , ] <- matrix(unlist(outcomes2), ncol=length(outcomes2))
+      
         }
         
         
@@ -234,7 +231,7 @@ base_x = rbind(simuldataforR[1, 4], c(NA), simuldataforR[2:9, 4] )
 base_x = t(base_x)
 base_outcomes = simuldataforR[10:22, 3:4]
 base_biom = simuldataforR[23:31, 3:4]
-horizon = 3
+horizon = 10
 
 treatment = simuldataforR[32:44, 3:4]
 treatment = cbind(treatment, matrix( rep(t((treatment[,2])), horizon), nrow(treatment), horizon))
