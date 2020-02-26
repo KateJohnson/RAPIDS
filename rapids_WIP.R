@@ -79,6 +79,7 @@ rapids <- function(base_biom, base_outcomes, base_x, treatment, betam, horizon) 
                              mapply("%*%", replicate(s,t(betam[136:148, bc]),simplify=FALSE), replicate(s,treat[ ,t+1, i],simplify=FALSE)) *
                                     fi_x[t+1, 1, i, , ]
       
+      print(bc)
       print(head(pr))
       pr <- ifelse(pr<0, 0, ifelse(pr>1, 1, pr))
       prl <- split(pr, seq(ncol(pr)))
@@ -116,7 +117,9 @@ rapids <- function(base_biom, base_outcomes, base_x, treatment, betam, horizon) 
                             mapply("%*%", replicate(s,t(betam[136:148, bc]),simplify=FALSE), replicate(s,treat[ ,t+1, i],simplify=FALSE)) * 
                                   fi_x[t+1, 1, i, , ]
         
+        print(bc)
         print(head(mu))
+        mu <- ifelse(mu<0, 0, mu)
         mul <- split(mu, seq(ncol(mu)))
         var <- lapply(mul, function(j) {exp(varcoeff[1,b]*log(j) + varcoeff[2,b]) })
         biom.t2 <- pmap(list(mul,var), function(j,k) { rnorm(m, j, sqrt(k)) })
@@ -163,6 +166,7 @@ rapids <- function(base_biom, base_outcomes, base_x, treatment, betam, horizon) 
                             mapply("%*%", replicate(s,t(betam[136:148, bc]),simplify=FALSE), replicate(s,treat[ ,t+1, i],simplify=FALSE)) * 
                                   fi_x[t+1, 1, i, , ]
           
+          print(bc)
           print(head(pr))
           pr <- ifelse(pr<0, 0, ifelse(pr>1, 1, pr))
           prl <- split(pr, seq(ncol(pr)))
@@ -200,6 +204,7 @@ rapids <- function(base_biom, base_outcomes, base_x, treatment, betam, horizon) 
                          mapply("%*%", replicate(s,t(betam[136:148, bc]),simplify=FALSE), replicate(s,treat[ ,t+1, i],simplify=FALSE)) * 
                                 fi_x[t+1, 1, i, , ]
           
+          print(bc)
           print(head(pr))
           pr = ifelse(pr<0, 0, ifelse(pr>1, 1, pr))
           prl <- split(pr, seq(ncol(pr)))
@@ -215,8 +220,14 @@ rapids <- function(base_biom, base_outcomes, base_x, treatment, betam, horizon) 
     
   }  
   
-  print(apply(fi_biom, c(1,2,3),mean))
-  print(apply(fi_outcomes, c(1,2,3),mean))
+  print("Mean biomarker levels for all individuals over all stochastic runs and parmeter draws")
+  biom <- data.frame(apply(fi_biom, c(1,2,3),mean))
+  colnames(biom) <- c("BMI","A1C","HDL","LDL","CHOL","TRIG","SBP","DBP","EGFR")
+  print(biom)
+  
+  print("Proportion of individuals with outcome over all stochastic runs and parmeter draws")
+  outcome <- apply(fi_outcomes, c(1,2,3),mean)
+  print(outcome)
 
 }
 
