@@ -220,13 +220,16 @@ rapids <- function(base_biom, base_outcomes, base_x, treatment, betam, horizon) 
     
   }  
   
+  cat("\n")
   print("Mean biomarker levels for all individuals over all stochastic runs and parmeter draws")
   biom <- data.frame(apply(fi_biom, c(1,2,3),mean))
   colnames(biom) <- c("BMI","A1C","HDL","LDL","CHOL","TRIG","SBP","DBP","EGFR")
   print(biom)
   
+  cat("\n")
   print("Proportion of individuals with outcome over all stochastic runs and parmeter draws")
-  outcome <- apply(fi_outcomes, c(1,2,3),mean)
+  outcome <- data.frame(apply(fi_outcomes, c(1,2,3),mean))
+  colnames(outcome) <- c("Death","Myo","Angina","Stroke","Hypo","Myo history","Angina history","Stroke history","Hypo history","CHF","LEA","Eye","ESRD")
   print(outcome)
 
 }
